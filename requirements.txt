@@ -1,8 +1,8 @@
 # ── OCR ──────────────────────────────────────────────────────────────────────
 # RapidOCR: PaddleOCR 的 ONNX 导出版，不依赖 paddle 框架
 rapidocr-onnxruntime==1.2.3
-# GPU 推理后端（CUDA 12.x）；纯 CPU 环境可换成 onnxruntime==1.24.4
-onnxruntime-gpu==1.24.4
+# GPU 推理后端（Windows DirectML）；CUDA 方案见 local_dev/docs/onnxruntime-gpu-upgrade.md
+onnxruntime-directml==1.24.4
 
 # ── ASR ──────────────────────────────────────────────────────────────────────
 faster-whisper==1.1.0

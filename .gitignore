@@ -26,3 +26,6 @@ GreenUninstall.bat
 # 目录扫描产物
 dir_scan_result.txt
 app/dir_scan_result.txt
+
+local_dev/
+local_prod/
