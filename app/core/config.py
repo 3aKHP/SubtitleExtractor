@@ -1,7 +1,4 @@
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib  # pip install tomli (Python < 3.11)
+import tomllib
 import os
 from pathlib import Path
 

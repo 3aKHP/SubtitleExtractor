@@ -13,31 +13,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.8
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: "3.11"
           cache: "pip"
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
+          # CI 无 GPU，用 CPU 版 onnxruntime；rapidocr 会自动选 CPUExecutionProvider
           pip install \
-            tomli \
+            onnxruntime \
+            rapidocr-onnxruntime==1.2.3 \
+            "opencv-python>=4.10.0" \
             pypinyin \
             jieba \
             pytest \
             pytest-cov \
             httpx \
             fastapi \
-            pydantic \
-            numpy
+            "pydantic>=2.0" \
+            "numpy>=2.0"
 
       - name: Lint (flake8)
         run: |
           pip install flake8
-          # E501: 行长度，项目里有长注释，暂不强制
-          # W503: 二元运算符换行风格，与 black 冲突
           flake8 app/ --max-line-length=120 --extend-ignore=E501,W503
 
       - name: Run tests
