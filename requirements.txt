@@ -1,0 +1,5 @@
+opencv-python
+paddlepaddle     # 如果有N卡，建议安装 paddlepaddle-gpu
+paddleocr
+numpy
+tqdm             # 进度条，非必须但推荐

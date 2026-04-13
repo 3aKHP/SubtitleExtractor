@@ -1,0 +1,4 @@
+# Git LFS — 二进制模型文件
+app/jieba/lac_small/model_baseline/* filter=lfs diff=lfs merge=lfs -text
+app/jieba/finalseg/*.p filter=lfs diff=lfs merge=lfs -text
+app/jieba/posseg/*.p filter=lfs diff=lfs merge=lfs -text

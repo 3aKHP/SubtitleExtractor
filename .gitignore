@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# 内嵌 Python 环境（6.3GB，不纳入版本控制）
+python_env/
+
+# 运行时产物
+output/
+temp_download/
+app/models/
+
+# 离线安装包
+*.whl
+
+# 第三方可执行文件（请自行下载，见 README）
+app/ffmpeg.exe
+app/yt-dlp.exe
+
+# 本地工具脚本
+GreenUninstall.bat
+
+# 目录扫描产物
+dir_scan_result.txt
+app/dir_scan_result.txt

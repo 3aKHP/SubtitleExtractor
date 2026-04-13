@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width: 350px; padding: 10px; font-family: sans-serif; }
+    h3 { margin-top: 0; }
+    button { width: 100%; padding: 10px; background: #00aeec; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #009cd6; }
+    button:disabled { background: #ccc; }
+    #status { margin-top: 10px; font-size: 12px; color: #666; }
+    
+    /* Tabs 样式 */
+    .tabs { display: flex; margin-top: 10px; border-bottom: 1px solid #ccc; }
+    .tab { flex: 1; padding: 5px; text-align: center; cursor: pointer; background: #f0f0f0; border: 1px solid #ccc; border-bottom: none; font-size: 12px; }
+    .tab.active { background: white; font-weight: bold; border-bottom: 1px solid white; margin-bottom: -1px; }
+    
+    .tab-content { display: none; padding: 10px; border: 1px solid #ccc; border-top: none; max-height: 200px; overflow-y: auto; font-size: 10px; white-space: pre-wrap; }
+    .tab-content.active { display: block; }
+    
+    .download-btn { margin-top: 5px; padding: 5px; background: #4CAF50; font-size: 10px; }
+    .download-btn:hover { background: #45a049; }
+  </style>
+</head>
+<body>
+  <h3>B站字幕提取 (OCR+ASR)</h3>
+  <p id="video-url" style="font-size: 10px; color: #888; word-break: break-all;">获取中...</p>
+  
+  <div style="margin-bottom: 10px;">
+    <label>字幕区域 (ROI): </label>
+    <select id="roi-select">
+      <option value="0.9">底部 10%</option>
+      <option value="0.8" selected>底部 20% (默认)</option>
+      <option value="0.7">底部 30%</option>
+    </select>
+  </div>
+
+  <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+    <div>
+        <label>采样速度: </label>
+        <select id="step-select" style="width: 80px;">
+            <option value="5">精细 (慢)</option>
+            <option value="10" selected>标准</option>
+            <option value="30">极速 (快)</option>
+        </select>
+    </div>
+    <div>
+        <input type="checkbox" id="timestamp-check" checked>
+        <label for="timestamp-check">带时间轴</label>
+    </div>
+  </div>
+  
+  <div style="margin-bottom: 10px;">
+      <input type="checkbox" id="asr-check" checked>
+      <label for="asr-check">启用 ASR (语音识别)</label>
+      <select id="model-size" style="width: 60px; font-size: 10px;">
+          <option value="tiny">Tiny</option>
+          <option value="base">Base</option>
+          <option value="small" selected>Small</option>
+          <option value="medium">Medium</option>
+          <option value="large-v3">Large-V3</option>
+      </select>
+  </div>
+
+  <button id="extract-btn">开始提取</button>
+  <div id="status">准备就绪</div>
+  
+  <!-- 结果区域 -->
+  <div id="result-container" style="display: none;">
+      <div class="tabs">
+          <div class="tab active" data-target="merged-content">合并校准</div>
+          <div class="tab" data-target="ocr-content">OCR (硬字幕)</div>
+          <div class="tab" data-target="asr-content">ASR (语音)</div>
+      </div>
+      
+      <div id="merged-content" class="tab-content active"></div>
+      <div id="ocr-content" class="tab-content"></div>
+      <div id="asr-content" class="tab-content"></div>
+      
+      <button id="download-current-btn" class="download-btn">下载当前显示的字幕</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
