@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    const API_BASE = 'http://127.0.0.1:8000';
+    const POLL_MAX = 600; // 最多轮询 600 次（10 分钟）
+
     const urlDisplay = document.getElementById('video-url');
     const extractBtn = document.getElementById('extract-btn');
     const statusDiv = document.getElementById('status');
@@ -27,9 +30,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 轮询逻辑
     async function pollStatus(taskId) {
+        let polls = 0;
         const intervalId = setInterval(async () => {
+            polls++;
+            if (polls > POLL_MAX) {
+                clearInterval(intervalId);
+                statusDiv.textContent = '❌ 超时：任务未在预期时间内完成';
+                extractBtn.disabled = false;
+                extractBtn.textContent = '重试';
+                return;
+            }
             try {
-                const res = await fetch(`http://127.0.0.1:8000/status/${taskId}`);
+                const res = await fetch(`${API_BASE}/status/${taskId}`);
                 if (!res.ok) return; // 忽略网络抖动
                 
                 const data = await res.json();
@@ -118,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         resultContainer.style.display = 'none';
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/extract', {
+            const response = await fetch(`${API_BASE}/extract`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -151,7 +163,6 @@ function downloadString(text, fileType, fileName) {
     var a = document.createElement('a');
     a.download = fileName;
     a.href = URL.createObjectURL(blob);
-    a.dataset.downloadurl = [fileType, a.download, a.href].join(':');
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
