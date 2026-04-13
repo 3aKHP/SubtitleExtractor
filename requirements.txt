@@ -1,5 +1,11 @@
 opencv-python
-paddlepaddle     # 如果有N卡，建议安装 paddlepaddle-gpu
+paddlepaddle        # GPU 版: paddlepaddle-gpu
 paddleocr
 numpy
-tqdm             # 进度条，非必须但推荐
+tqdm
+fastapi
+uvicorn
+pydantic
+faster-whisper
+pypinyin
+tomli               # Python < 3.11 需要；3.11+ 可删除此行

@@ -13,6 +13,9 @@ app/models/
 # 离线安装包
 *.whl
 
+# 用户本地配置（含敏感信息，不提交）
+config.toml
+
 # 第三方可执行文件（请自行下载，见 README）
 app/ffmpeg.exe
 app/yt-dlp.exe

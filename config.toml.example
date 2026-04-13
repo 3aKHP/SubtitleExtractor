@@ -1,0 +1,26 @@
+# 复制此文件为 config.toml 并按需修改
+
+[server]
+host = "127.0.0.1"
+port = 8000
+
+[ocr]
+use_gpu = true
+confidence_threshold = 0.85
+
+[asr]
+default_model_size = "small"  # tiny / base / small / medium / large
+device = "cuda"               # cuda / cpu
+
+[extraction]
+default_roi = 0.8             # 字幕区域起始位置比例 (0.0~1.0)
+default_step = 10             # 每隔多少帧采样一次
+default_include_timestamp = true
+similarity_threshold = 0.7    # 去重相似度阈值
+history_size = 3              # 去重历史窗口大小
+
+[downloader]
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+video_format = "bestvideo[vcodec^=avc][height<=720]+bestaudio/best[ext=mp4][height<=720]"
+socket_timeout = 30
+retries = 10
