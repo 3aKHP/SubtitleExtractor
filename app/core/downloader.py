@@ -3,8 +3,11 @@ import json
 import subprocess
 from core import config
 
+def _app_dir() -> str:
+    return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
 def _ytdlp_exe() -> str:
-    local = os.path.abspath("yt-dlp.exe")
+    local = os.path.join(_app_dir(), "yt-dlp.exe")
     return local if os.path.exists(local) else "yt-dlp"
 
 def _popen_flags() -> int:
@@ -37,7 +40,7 @@ def download_video(url: str, save_path: str) -> None:
         "-f", config.downloader["video_format"],
         "--merge-output-format", "mp4",
         "-o", save_path,
-        "--ffmpeg-location", os.getcwd(),
+        "--ffmpeg-location", _app_dir(),
         "--no-warnings", "--no-playlist",
         "--socket-timeout", str(config.downloader["socket_timeout"]),
         "--retries", str(config.downloader["retries"]),
