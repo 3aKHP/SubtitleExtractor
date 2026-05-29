@@ -1,3 +1,6 @@
+# vscode
+.vscode/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -15,6 +18,7 @@ app/models/
 
 # 用户本地配置（含敏感信息，不提交）
 config.toml
+.env
 
 # 第三方可执行文件（请自行下载，见 README）
 app/ffmpeg.exe
@@ -22,10 +26,17 @@ app/yt-dlp.exe
 
 # 本地工具脚本
 GreenUninstall.bat
+clean_env.py
 
 # 目录扫描产物
 dir_scan_result.txt
 app/dir_scan_result.txt
 
+# 本地诊断产物
+diagnose_*.py
+diagnose_*.png
+test_subtitle_frame.png
+
 local_dev/
 local_prod/
+models/

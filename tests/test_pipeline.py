@@ -109,3 +109,55 @@ class TestRunOcr:
 
         assert "[" not in result
         assert "字幕内容" in result
+
+
+class TestRunFullPipeline:
+    def test_asr_uses_worker_subprocess_adapter(self, tmp_path):
+        from core.pipeline import run_full_pipeline
+
+        video_path = tmp_path / "video.mp4"
+        video_path.write_bytes(b"")
+        ocr = MagicMock()
+
+        with (
+            patch("core.pipeline.run_ocr", return_value="[00:00:01] 你好"),
+            patch("core.pipeline.extract_audio", return_value=True),
+            patch(
+                "core.pipeline.transcribe_audio",
+                return_value=[{"start": 1.0, "end": 2.0, "text": "你好"}],
+            ) as transcribe,
+        ):
+            result = run_full_pipeline(
+                str(video_path),
+                str(tmp_path),
+                ocr,
+                enable_asr=True,
+                asr_model_size="small",
+            )
+
+        transcribe.assert_called_once()
+        assert transcribe.call_args.args[0] == str(tmp_path / "video_asr.wav")
+        assert transcribe.call_args.kwargs["model_size"] == "small"
+        assert "你好" in result["asr_raw"]
+
+    def test_asr_worker_failure_falls_back_to_ocr(self, tmp_path):
+        from core.pipeline import run_full_pipeline
+
+        video_path = tmp_path / "video.mp4"
+        video_path.write_bytes(b"")
+        ocr = MagicMock()
+
+        with (
+            patch("core.pipeline.run_ocr", return_value="OCR only"),
+            patch("core.pipeline.extract_audio", return_value=True),
+            patch("core.pipeline.transcribe_audio", side_effect=RuntimeError("boom")),
+        ):
+            result = run_full_pipeline(
+                str(video_path),
+                str(tmp_path),
+                ocr,
+                enable_asr=True,
+            )
+
+        assert result["asr_raw"] == "ASR Error: boom"
+        assert result["merged"] == "OCR only"

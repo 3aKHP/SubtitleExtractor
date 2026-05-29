@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ocrContent = document.getElementById('ocr-content');
     const asrContent = document.getElementById('asr-content');
     
-    const roiSelect = document.getElementById('roi-select');
+    const roiBottom = document.getElementById('roi-bottom');
+    const roiTop = document.getElementById('roi-top');
     const stepSelect = document.getElementById('step-select');
     const timestampCheck = document.getElementById('timestamp-check');
     const asrCheck = document.getElementById('asr-check');
@@ -118,7 +119,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     extractBtn.addEventListener('click', async () => {
         const videoUrl = tab.url;
-        const roi = parseFloat(roiSelect.value);
+        const roi_bottom = parseFloat(roiBottom.value);
+        const roi_top = parseFloat(roiTop.value);
         const step = parseInt(stepSelect.value);
         const timestamp = timestampCheck.checked;
         const enableAsr = asrCheck.checked;
@@ -135,7 +137,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     url: videoUrl,
-                    roi: roi,
+                    roi_bottom: roi_bottom,
+                    roi_top: roi_top,
                     step: step,
                     timestamp: timestamp,
                     enable_asr: enableAsr,

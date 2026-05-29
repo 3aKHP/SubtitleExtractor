@@ -4,16 +4,24 @@ pipeline.py — 核心编排层
 CLI 和 server 都调用这里，不直接互相依赖。
 """
 import os
-import gc
 import subprocess
+from typing import Protocol
+
 from core import config
+from core.asr_worker import transcribe_audio
 from core.video_processor import VideoProcessor
-from core.ocr_engine import OCREngine
 from core.utils import clean_text, is_duplicate
+
+
+class OCRRecognizer(Protocol):
+    def recognize(self, image) -> str:
+        ...
 
 def extract_audio(video_path: str, audio_path: str) -> bool:
     """用 ffmpeg 从视频提取 16k 单声道 wav。"""
-    ffmpeg_exe = os.path.abspath("ffmpeg.exe") if os.path.exists("ffmpeg.exe") else "ffmpeg"
+    _APP_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    local = os.path.join(_APP_DIR, "ffmpeg.exe")
+    ffmpeg_exe = local if os.path.exists(local) else "ffmpeg"
 
     cmd = [
         ffmpeg_exe, "-y",
@@ -46,8 +54,9 @@ def extract_audio(video_path: str, audio_path: str) -> bool:
 def run_ocr(
     video_path: str,
     output_dir: str,
-    ocr_engine: OCREngine,
-    roi_ratio: float = None,
+    ocr_engine: OCRRecognizer,
+    roi_bottom: float = None,
+    roi_top: float = None,
     step: int = None,
     include_timestamp: bool = None,
     progress_callback=None,
@@ -56,7 +65,8 @@ def run_ocr(
     对单个视频跑 OCR，结果写入 output_dir，同时返回文本内容。
     progress_callback(percent: int, msg: str)
     """
-    roi_ratio = roi_ratio if roi_ratio is not None else config.extraction["default_roi"]
+    roi_bottom = roi_bottom if roi_bottom is not None else config.extraction["default_roi_bottom"]
+    roi_top    = roi_top    if roi_top    is not None else config.extraction["default_roi_top"]
     step = step if step is not None else config.extraction["default_step"]
     include_timestamp = include_timestamp if include_timestamp is not None else config.extraction["default_include_timestamp"]
     threshold = config.extraction["similarity_threshold"]
@@ -65,7 +75,7 @@ def run_ocr(
     base_name = os.path.splitext(os.path.basename(video_path))[0]
     output_path = os.path.join(output_dir, f"subtitle_{base_name}.txt")
 
-    processor = VideoProcessor(video_path, roi_ratio=roi_ratio)
+    processor = VideoProcessor(video_path, roi_bottom=roi_bottom, roi_top=roi_top)
 
     if progress_callback:
         progress_callback(0, "正在初始化 OCR...")
@@ -103,8 +113,9 @@ def run_ocr(
 def run_full_pipeline(
     video_path: str,
     output_dir: str,
-    ocr_engine: OCREngine,
-    roi_ratio: float = None,
+    ocr_engine: OCRRecognizer,
+    roi_bottom: float = None,
+    roi_top: float = None,
     step: int = None,
     include_timestamp: bool = None,
     enable_asr: bool = True,
@@ -128,7 +139,7 @@ def run_full_pipeline(
 
     ocr_raw = run_ocr(
         video_path, output_dir, ocr_engine,
-        roi_ratio=roi_ratio, step=step,
+        roi_bottom=roi_bottom, roi_top=roi_top, step=step,
         include_timestamp=include_timestamp,
         progress_callback=ocr_cb,
     )
@@ -138,36 +149,23 @@ def run_full_pipeline(
     asr_raw = ""
 
     if enable_asr:
-        try:
-            from core.asr_engine import ASREngine
-        except ImportError:
-            print("⚠️ ASR 不可用，跳过")
-            enable_asr = False
-
-    if enable_asr:
         _progress(72, "正在提取音频...")
         audio_path = os.path.splitext(video_path)[0] + "_asr.wav"
 
         if extract_audio(video_path, audio_path):
-            _progress(75, f"正在加载 ASR 模型...")
+            _progress(75, "正在加载 ASR 模型...")
             try:
-                asr_engine = ASREngine(model_size=asr_model_size)
                 _progress(80, "正在语音识别...")
-                asr_results = asr_engine.transcribe(audio_path)
-                asr_engine.release()
-                del asr_engine
-
-                try:
-                    import torch
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                except ImportError:
-                    pass
-                gc.collect()
+                asr_results = transcribe_audio(
+                    audio_path,
+                    model_size=asr_model_size,
+                    device=config.asr.get("device"),
+                )
 
                 from core.alignment import AlignmentModule
+                aligner = AlignmentModule()
                 asr_raw = "\n".join(
-                    f"[{AlignmentModule().format_timestamp(s['start'])}] {s['text']}"
+                    f"[{aligner.format_timestamp(s['start'])}] {s['text']}"
                     for s in asr_results
                 )
             except Exception as e:

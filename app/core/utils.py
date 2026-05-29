@@ -1,5 +1,4 @@
 import difflib
-import re
 
 def text_similarity(a: str, b: str) -> float:
     return difflib.SequenceMatcher(None, a, b).ratio()

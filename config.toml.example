@@ -5,15 +5,25 @@ host = "127.0.0.1"
 port = 8000
 
 [ocr]
-use_gpu = true
-confidence_threshold = 0.85
+backend = "paddle"                          # "paddle" | "remote"
+use_gpu = false                             # PaddleOCR CPU 是当前稳定默认；GPU 需本机 CUDA/cuDNN 完整可用
+confidence_threshold = 0.6
+
+# 远程后端 (SiliconFlow PaddleOCR-VL)
+remote_url = "https://api.siliconflow.cn/v1/chat/completions"
+remote_api_key = ""
+remote_model = "deepseek-ai/DeepSeek-OCR"
+remote_timeout = 120
+remote_max_concurrency = 3
 
 [asr]
+enabled = false             # ASR 是可选功能；安装 requirements-asr.txt 后再开启
 default_model_size = "small"  # tiny / base / small / medium / large
 device = "cuda"               # cuda / cpu
 
 [extraction]
-default_roi = 0.8             # 字幕区域起始位置比例 (0.0~1.0)
+default_roi_bottom = 0.0   # 字幕区域底边（从画面底部算起的比例，0=底边）
+default_roi_top = 0.2      # 字幕区域顶边（从画面底部算起的比例，0.2=底部20%）
 default_step = 10             # 每隔多少帧采样一次
 default_include_timestamp = true
 similarity_threshold = 0.7    # 去重相似度阈值

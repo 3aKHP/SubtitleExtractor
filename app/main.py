@@ -3,7 +3,8 @@ import argparse
 from pathlib import Path
 from tqdm import tqdm
 
-from core.ocr_engine import OCREngine
+from core import config
+from core.ocr_engine import create_ocr_engine
 from core.pipeline import run_full_pipeline
 
 def main():
@@ -13,15 +14,21 @@ def main():
     parser.add_argument("--roi", type=float, default=None, help="字幕区域起始位置比例")
     parser.add_argument("--step", type=int, default=None, help="采样步长（帧）")
     parser.add_argument("--no-timestamp", action="store_true", help="输出不含时间戳")
+    parser.add_argument("--asr", action="store_true", help="启用 ASR")
     parser.add_argument("--no-asr", action="store_true", help="禁用 ASR")
     parser.add_argument("--asr-model", default=None, help="ASR 模型大小")
     parser.add_argument("--cpu", action="store_true", help="强制 CPU 模式")
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
+    enable_asr = config.asr.get("enabled", False)
+    if args.asr:
+        enable_asr = True
+    if args.no_asr:
+        enable_asr = False
 
     print("正在初始化 OCR 引擎...")
-    ocr_engine = OCREngine(use_gpu=not args.cpu)
+    ocr_engine = create_ocr_engine(use_gpu=not args.cpu)
 
     input_path = Path(args.input)
     if input_path.is_file():
@@ -37,14 +44,14 @@ def main():
 
     for v_file in tqdm(video_files, desc="总进度", unit="video"):
         try:
-            result = run_full_pipeline(
+            run_full_pipeline(
                 str(v_file),
                 args.output,
                 ocr_engine,
-                roi_ratio=args.roi,
+                roi_top=args.roi,
                 step=args.step,
                 include_timestamp=not args.no_timestamp,
-                enable_asr=not args.no_asr,
+                enable_asr=enable_asr,
                 asr_model_size=args.asr_model,
             )
             print(f"✅ {v_file.name} 完成")

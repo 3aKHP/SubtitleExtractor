@@ -27,12 +27,14 @@
   <p id="video-url" style="font-size: 10px; color: #888; word-break: break-all;">获取中...</p>
   
   <div style="margin-bottom: 10px;">
-    <label>字幕区域 (ROI): </label>
-    <select id="roi-select">
-      <option value="0.9">底部 10%</option>
-      <option value="0.8" selected>底部 20% (默认)</option>
-      <option value="0.7">底部 30%</option>
-    </select>
+    <label>字幕区域 (从底部算起):</label>
+    <div style="display:flex; gap:8px; align-items:center; margin-top:4px; font-size:12px;">
+      <span>底边</span>
+      <input type="number" id="roi-bottom" value="0.0" min="0" max="0.99" step="0.05" style="width:55px;">
+      <span>顶边</span>
+      <input type="number" id="roi-top" value="0.2" min="0.01" max="1.0" step="0.05" style="width:55px;">
+      <span style="color:#888;">（0=底, 1=顶）</span>
+    </div>
   </div>
 
   <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
@@ -51,7 +53,7 @@
   </div>
   
   <div style="margin-bottom: 10px;">
-      <input type="checkbox" id="asr-check" checked>
+      <input type="checkbox" id="asr-check">
       <label for="asr-check">启用 ASR (语音识别)</label>
       <select id="model-size" style="width: 60px; font-size: 10px;">
           <option value="tiny">Tiny</option>

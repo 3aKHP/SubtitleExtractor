@@ -8,15 +8,23 @@ MINIMAL_CONFIG = textwrap.dedent("""\
     port = 8000
 
     [ocr]
+    backend = "paddle"  # "paddle" | "remote"
     use_gpu = false
-    confidence_threshold = 0.85
+    confidence_threshold = 0.6
+    remote_url = "https://api.siliconflow.cn/v1/chat/completions"
+    remote_api_key = ""
+    remote_model = "deepseek-ai/DeepSeek-OCR"
+    remote_timeout = 120
+    remote_max_concurrency = 3
 
     [asr]
+    enabled = false
     default_model_size = "small"
     device = "cpu"
 
     [extraction]
-    default_roi = 0.8
+    default_roi_bottom = 0.0
+    default_roi_top = 0.2
     default_step = 10
     default_include_timestamp = true
     similarity_threshold = 0.7

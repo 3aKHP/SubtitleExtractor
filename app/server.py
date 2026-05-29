@@ -2,7 +2,6 @@ import os
 import shutil
 import threading
 import uuid
-import gc
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,19 +9,17 @@ from pydantic import BaseModel
 import uvicorn
 
 from core import config
-from core.ocr_engine import OCREngine
+from core.asr_worker import check_asr_available
+from core.ocr_engine import create_ocr_engine
 from core.pipeline import run_full_pipeline
 from core.downloader import get_video_metadata, download_video
 
-try:
-    import torch
-    _TORCH_AVAILABLE = True
-except ImportError:
-    _TORCH_AVAILABLE = False
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_APP_DIR)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    temp_dir = os.path.abspath("temp_download")
+    temp_dir = os.path.join(_PROJECT_ROOT, "temp_download")
     if os.path.exists(temp_dir):
         try:
             shutil.rmtree(temp_dir)
@@ -46,21 +43,25 @@ TASKS: dict = {}
 _TASK_LOCK = threading.Lock()
 
 print("🚀 正在初始化全局 OCR 引擎...")
-global_ocr = OCREngine()
+
+_asr_available = check_asr_available()
+if not _asr_available:
+    print("⚠️ ASR 不可用或未安装，将仅启用 OCR 基线")
+global_ocr = create_ocr_engine()
 
 class VideoRequest(BaseModel):
     url: str
-    roi: float = config.extraction["default_roi"]
+    roi_bottom: float = config.extraction["default_roi_bottom"]
+    roi_top: float = config.extraction["default_roi_top"]
     step: int = config.extraction["default_step"]
     timestamp: bool = config.extraction["default_include_timestamp"]
-    enable_asr: bool = True
+    enable_asr: bool = config.asr.get("enabled", False)
     model_size: str = config.asr["default_model_size"]
 
 
 def background_task(task_id: str, request: VideoRequest):
-    base_dir = os.getcwd()
-    temp_dir = os.path.join(base_dir, "temp_download")
-    output_dir = os.path.join(base_dir, "output")
+    temp_dir = os.path.join(_PROJECT_ROOT, "temp_download")
+    output_dir = os.path.join(_PROJECT_ROOT, "output")
     os.makedirs(output_dir, exist_ok=True)
 
     def update(percent: int, msg: str):
@@ -92,7 +93,8 @@ def background_task(task_id: str, request: VideoRequest):
             video_path,
             output_dir,
             global_ocr,
-            roi_ratio=request.roi,
+            roi_bottom=request.roi_bottom,
+            roi_top=request.roi_top,
             step=request.step,
             include_timestamp=request.timestamp,
             enable_asr=request.enable_asr,
@@ -112,7 +114,9 @@ def background_task(task_id: str, request: VideoRequest):
             }
 
     except Exception as e:
-        print(f"❌ 任务崩溃: {e}")
+        import traceback
+        print(f"❌ 任务崩溃: {type(e).__name__}: {e}")
+        traceback.print_exc()
         with _TASK_LOCK:
             TASKS[task_id]["status"] = "error"
             TASKS[task_id]["error"] = str(e)
@@ -132,6 +136,18 @@ def submit_task(request: VideoRequest):
     t = threading.Thread(target=background_task, args=(task_id, request), daemon=True)
     t.start()
     return {"task_id": task_id}
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "ocr_backend": config.ocr.get("backend", "paddle"),
+        "ocr_use_gpu": config.ocr.get("use_gpu", False),
+        "asr_enabled": config.asr.get("enabled", False),
+        "asr_available": _asr_available,
+        "config_path": str(config.config_path),
+    }
 
 
 @app.get("/status/{task_id}")

@@ -1,41 +1,99 @@
 @echo off
-:: SubtitleExtractor 环境安装脚本
-:: 前提：已安装 Anaconda，CUDA 12.x 驱动
+setlocal
+:: SubtitleExtractor CPU baseline setup.
+:: Optional overrides:
+::   set SUBTITLE_EXTRACTOR_ENV=my-env
+::   set CONDA_EXE=C:\Path\To\conda.exe
 
-set CONDA=E:\Anaconda3\Scripts\conda.exe
-set ENV_NAME=subtitle-extractor
-set PY=E:\Anaconda3\envs\%ENV_NAME%\python.exe
-set MIRROR=-i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+set "ENV_NAME=subtitle-extractor"
+if defined SUBTITLE_EXTRACTOR_ENV set "ENV_NAME=%SUBTITLE_EXTRACTOR_ENV%"
 
-echo [1/4] 创建 conda 环境 (Python 3.11)...
-%CONDA% create -n %ENV_NAME% python=3.11 -y
+call :find_conda
 if errorlevel 1 (
-    echo 环境已存在，跳过创建
+    pause
+    exit /b 1
 )
 
-echo [2/4] 安装 onnxruntime-gpu (CUDA 12.x, ~207MB)...
-%PY% -m pip install onnxruntime-gpu==1.24.4 %MIRROR%
+echo Using Conda: %CONDA%
+echo Environment: %ENV_NAME%
+echo.
 
-echo [3/4] 安装其余依赖...
-%PY% -m pip install ^
-    rapidocr-onnxruntime==1.2.3 ^
-    faster-whisper==1.1.0 ^
-    ctranslate2 ^
-    "opencv-python>=4.10.0" ^
-    "fastapi>=0.110.0" ^
-    "uvicorn>=0.29.0" ^
-    "pydantic>=2.0" ^
-    "numpy>=2.0" ^
-    tqdm pypinyin jieba ^
-    httpx pytest pytest-cov ^
-    %MIRROR%
+echo [1/4] Ensuring conda environment (Python 3.11)...
+call "%CONDA%" env list | findstr /R /C:"^%ENV_NAME%[ ]" >nul 2>nul
+if errorlevel 1 (
+    call "%CONDA%" create -n "%ENV_NAME%" python=3.11 -y
+    if errorlevel 1 (
+        echo Failed to create conda environment.
+        pause
+        exit /b 1
+    )
+) else (
+    echo Environment already exists, skipping creation.
+)
 
-echo [4/4] 验证...
-%PY% -c "import onnxruntime; print('onnxruntime:', onnxruntime.__version__, '| providers:', onnxruntime.get_available_providers())"
-%PY% -c "import rapidocr_onnxruntime; print('RapidOCR OK')"
-%PY% -c "import faster_whisper; print('faster-whisper OK')"
+echo [2/4] Installing CPU baseline dependencies...
+call :run_python -m pip install --upgrade pip
+if errorlevel 1 goto :pip_failed
+call :run_python -m pip install -r requirements.txt
+if errorlevel 1 goto :pip_failed
+
+echo [3/4] Installing development verification tools...
+call :run_python -m pip install -r requirements-dev.txt
+if errorlevel 1 goto :pip_failed
+
+echo [4/4] Verifying PaddleOCR baseline imports...
+call :run_python -c "import paddleocr, paddle; print('PaddleOCR:', paddleocr.__version__, '| paddle:', paddle.__version__)"
+if errorlevel 1 (
+    echo Baseline import verification failed.
+    pause
+    exit /b 1
+)
 
 echo.
-echo 完成！启动服务请运行：
-echo   %PY% app\server.py
+echo Done. Start the service with:
+echo   start.bat
+echo.
+echo Download ffmpeg.exe and yt-dlp.exe before first extraction:
+echo   powershell -ExecutionPolicy Bypass -File scripts\download_tools.ps1
+echo.
+echo Optional ASR setup:
+echo   setup_asr_cuda.bat
 pause
+exit /b 0
+
+:pip_failed
+echo Dependency installation failed.
+pause
+exit /b 1
+
+:run_python
+call "%CONDA%" run -n "%ENV_NAME%" python %*
+exit /b %ERRORLEVEL%
+
+:find_conda
+if defined CONDA_EXE (
+    if exist "%CONDA_EXE%" (
+        set "CONDA=%CONDA_EXE%"
+        exit /b 0
+    )
+)
+
+for /f "delims=" %%I in ('where conda 2^>nul') do (
+    set "CONDA=%%I"
+    exit /b 0
+)
+
+for %%I in (
+    "%USERPROFILE%\miniconda3\Scripts\conda.exe"
+    "%USERPROFILE%\anaconda3\Scripts\conda.exe"
+    "C:\ProgramData\miniconda3\Scripts\conda.exe"
+    "C:\ProgramData\Anaconda3\Scripts\conda.exe"
+) do (
+    if exist "%%~I" (
+        set "CONDA=%%~I"
+        exit /b 0
+    )
+)
+
+echo Conda was not found. Install Miniconda/Anaconda or set CONDA_EXE.
+exit /b 1

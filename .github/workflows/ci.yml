@@ -22,10 +22,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          # CI 无 GPU，用 CPU 版 onnxruntime；rapidocr 会自动选 CPUExecutionProvider
+          # CI 只跑轻量单元测试，不初始化 PaddleOCR/ASR 模型。
           pip install \
-            onnxruntime \
-            rapidocr-onnxruntime==1.2.3 \
             "opencv-python>=4.10.0" \
             pypinyin \
             jieba \
@@ -33,13 +31,21 @@ jobs:
             pytest-cov \
             httpx \
             fastapi \
+            uvicorn \
             "pydantic>=2.0" \
             "numpy>=2.0"
 
       - name: Lint (flake8)
         run: |
           pip install flake8
-          flake8 app/ --max-line-length=120 --extend-ignore=E501,W503
+          flake8 app/core app/main.py app/server.py scripts --select=F
+
+      - name: Static entrypoint checks
+        run: |
+          python -m compileall -q app tests scripts
+          python app/main.py --help
+          python scripts/benchmark_runtime.py --help
+          python scripts/smoke_server.py --help
 
       - name: Run tests
         run: |

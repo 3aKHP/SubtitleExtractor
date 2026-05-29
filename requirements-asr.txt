@@ -1,0 +1,6 @@
+# Optional ASR dependencies.
+#
+# Install this after requirements.txt when speech recognition is needed.
+# CUDA acceleration depends on the local NVIDIA driver/CUDA runtime stack.
+faster-whisper==1.1.0
+ctranslate2>=4.4.0

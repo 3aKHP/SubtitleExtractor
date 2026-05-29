@@ -2,21 +2,24 @@ import cv2
 import numpy as np
 
 class VideoProcessor:
-    # 【关键修复】这里必须增加 roi_ratio 参数，并设置默认值
-    def __init__(self, video_path, roi_ratio=0.8):
-        self.video_path = video_path # 保存路径供音频提取使用
+    def __init__(self, video_path, roi_bottom=0.0, roi_top=0.2):
+        """
+        roi_bottom / roi_top: 从画面底部算起的比例（0=底边, 1=顶边）。
+        例如 roi_bottom=0.1, roi_top=0.4 表示截取距底部 10%~40% 的区域。
+        """
+        self.video_path = video_path
         self.cap = cv2.VideoCapture(video_path)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        
-        # 【关键修复】使用传入的 roi_ratio 计算截取位置
-        # 限制范围，防止参数传错导致报错
-        roi_ratio = max(0.1, min(0.9, roi_ratio))
-        
-        self.roi_y_start = int(self.height * roi_ratio)
-        self.roi_height = self.height - self.roi_y_start
+
+        roi_bottom = max(0.0, min(0.99, roi_bottom))
+        roi_top    = max(roi_bottom + 0.01, min(1.0, roi_top))
+
+        # 转换为像素坐标（y 轴从上到下）
+        self.roi_y_start = int(self.height * (1.0 - roi_top))
+        self.roi_y_end   = int(self.height * (1.0 - roi_bottom))
 
     def get_time_string(self, frame_index):
         """将帧号转换为时间戳字符串 (HH:MM:SS)"""
@@ -107,7 +110,7 @@ class VideoProcessor:
             # 1. 裁剪字幕区域 (ROI)
             # 增加 .copy() 确保内存连续
             try:
-                roi = np.ascontiguousarray(frame[self.roi_y_start:self.height, 0:self.width])
+                roi = np.ascontiguousarray(frame[self.roi_y_start:self.roi_y_end, 0:self.width])
             except Exception:
                 current_frame_idx += 1
                 continue
