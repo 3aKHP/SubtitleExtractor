@@ -10,5 +10,6 @@
 - Add verified dependency constraints for the PaddleOCR CPU baseline.
 - Run a startup preflight check from `start.bat`.
 - Add troubleshooting documentation for setup, tools, PaddleOCR model downloads, Bilibili downloads, ASR, CUDA, and port conflicts.
+- Add tag-triggered GitHub Release automation with source archive, Chrome extension archive, checksums, and generated release notes.
 - Remove vendored `jieba` and Git LFS requirements; use the PyPI dependency instead.
 - Keep local config, downloaded tools, model caches, diagnostics, and benchmark output out of version control.

@@ -30,6 +30,7 @@ Make SubtitleExtractor distributable as an out-of-the-box GitHub project by stab
 | Server smoke | `scripts/smoke_server.py` checks `/health` and can optionally submit/poll `/extract`. | Verified |
 | Performance baseline | `docs/performance.md` records the Bilibili sample, CPU OCR timing, CPU ASR timing, CUDA ASR timing, and reproduction commands. | Verified |
 | CI guardrails | GitHub Actions run lint, compileall, entrypoint help checks, and tests without pulling heavy OCR/ASR model stacks. | Verified |
+| Tag-triggered release automation | `.github/workflows/release.yml` runs lightweight verification on `v*` tags, creates source and Chrome extension archives, writes SHA256 checksums, and publishes a GitHub Release. | Ready |
 | Chrome extension API contract | `popup.js` submits `roi_bottom`, `roi_top`, `enable_asr`, and `model_size`; tests guard these fields and ASR opt-in default. | Verified |
 
 ## Latest Local Verification

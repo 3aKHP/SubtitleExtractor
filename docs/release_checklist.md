@@ -26,6 +26,7 @@ This checklist defines the minimum bar before publishing SubtitleExtractor as a 
 ## Repository Hygiene
 
 - `config.toml`, `.env`, local model caches, downloads, benchmark output, and diagnostic images are ignored.
+- Generated release artifacts under `dist/` and generated `RELEASE_NOTES.md` are ignored.
 - `app/ffmpeg.exe` and `app/yt-dlp.exe` are not tracked; users fetch them with `scripts/download_tools.ps1`.
 - Dangerous local environment cleanup scripts are not tracked.
 - Do not vendor `jieba` under `app/`; rely on the PyPI dependency from `requirements.txt`.
@@ -51,3 +52,20 @@ For benchmark refreshes:
 ```powershell
 conda run -n subtitle-extractor python scripts/benchmark_runtime.py local_dev\bench_BV1F3GH6bEGw.mp4 --asr-devices cpu,cuda
 ```
+
+## Publishing
+
+Publish by pushing a version tag:
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow verifies the candidate, creates:
+
+- `SubtitleExtractor-<tag>-source.zip`
+- `SubtitleExtractor-<tag>-chrome-extension.zip`
+- `SHA256SUMS.txt`
+
+Do not attach local `ffmpeg.exe`, `yt-dlp.exe`, PaddleOCR model files, Conda environments, benchmark videos, or generated subtitles to the GitHub Release.

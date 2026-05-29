@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install lightweight verification dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            "opencv-python>=4.10.0" \
+            pypinyin \
+            jieba \
+            pytest \
+            pytest-cov \
+            httpx \
+            fastapi \
+            uvicorn \
+            "pydantic>=2.0" \
+            "numpy>=2.0" \
+            tqdm \
+            flake8
+
+      - name: Verify release candidate
+        run: |
+          flake8 app/core app/main.py app/server.py scripts --select=F
+          python -m compileall -q app tests scripts
+          python app/main.py --help
+          python scripts/benchmark_runtime.py --help
+          python scripts/smoke_server.py --help
+          pytest tests/ -q
+
+      - name: Build release archives
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          git archive --format=zip --output "dist/SubtitleExtractor-$tag-source.zip" HEAD
+          git archive --format=zip --output "dist/SubtitleExtractor-$tag-chrome-extension.zip" HEAD chrome_extension
+
+          Get-ChildItem dist -Filter *.zip |
+            ForEach-Object {
+              $hash = Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName
+              "{0}  {1}" -f $hash.Hash.ToLowerInvariant(), $_.Name
+            } |
+            Set-Content -Path dist/SHA256SUMS.txt -Encoding utf8
+
+          Get-ChildItem dist
+
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $changelog = Get-Content CHANGELOG.md -Raw
+          $match = [regex]::Match($changelog, '(?ms)^## Unreleased\s*(.*?)(?=^## |\z)')
+          $section = if ($match.Success) { $match.Groups[1].Value.Trim() } else { "" }
+
+          $notes = "# SubtitleExtractor $tag`n`n"
+          if ($section) {
+            $notes += "$section`n`n"
+          }
+          $notes += @'
+          ## Install
+
+          ```powershell
+          git clone https://github.com/3aKHP/SubtitleExtractor.git
+          cd SubtitleExtractor
+          .\setup_env.bat
+          powershell -ExecutionPolicy Bypass -File scripts\download_tools.ps1
+          .\start.bat
+          ```
+
+          This release does not bundle `ffmpeg.exe`, `yt-dlp.exe`, PaddleOCR model files, or a Conda environment. Use the setup scripts after extracting the source archive.
+
+          ## Assets
+
+          - `SubtitleExtractor-*-source.zip`: tracked project source for this tag.
+          - `SubtitleExtractor-*-chrome-extension.zip`: Chrome extension files.
+          - `SHA256SUMS.txt`: SHA256 checksums for the generated archives.
+          '@
+
+          Set-Content -Path RELEASE_NOTES.md -Value $notes -Encoding utf8
+          Get-Content RELEASE_NOTES.md
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $assets = Get-ChildItem dist | ForEach-Object { $_.FullName }
+          $args = @(
+            "release", "create", $tag
+          ) + $assets + @(
+            "--repo", $env:GITHUB_REPOSITORY,
+            "--title", "SubtitleExtractor $tag",
+            "--notes-file", "RELEASE_NOTES.md",
+            "--verify-tag"
+          )
+          if ($tag -match "-") {
+            $args += "--prerelease"
+          }
+          & gh @args
