@@ -7,6 +7,8 @@ setlocal
 
 set "ENV_NAME=subtitle-extractor"
 if defined SUBTITLE_EXTRACTOR_ENV set "ENV_NAME=%SUBTITLE_EXTRACTOR_ENV%"
+set "PIP_CONSTRAINT_ARGS="
+if exist "constraints.txt" set "PIP_CONSTRAINT_ARGS=-c constraints.txt"
 
 call :find_conda
 if errorlevel 1 (
@@ -16,6 +18,7 @@ if errorlevel 1 (
 
 echo Using Conda: %CONDA%
 echo Environment: %ENV_NAME%
+if defined PIP_CONSTRAINT_ARGS echo Pip constraints: constraints.txt
 echo.
 
 echo [1/4] Ensuring conda environment (Python 3.11)...
@@ -34,11 +37,11 @@ if errorlevel 1 (
 echo [2/4] Installing CPU baseline dependencies...
 call :run_python -m pip install --upgrade pip
 if errorlevel 1 goto :pip_failed
-call :run_python -m pip install -r requirements.txt
+call :run_python -m pip install -r requirements.txt %PIP_CONSTRAINT_ARGS%
 if errorlevel 1 goto :pip_failed
 
 echo [3/4] Installing development verification tools...
-call :run_python -m pip install -r requirements-dev.txt
+call :run_python -m pip install -r requirements-dev.txt %PIP_CONSTRAINT_ARGS%
 if errorlevel 1 goto :pip_failed
 
 echo [4/4] Verifying PaddleOCR baseline imports...

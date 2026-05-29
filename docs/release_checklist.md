@@ -5,12 +5,13 @@ This checklist defines the minimum bar before publishing SubtitleExtractor as a 
 ## Baseline Runtime
 
 - `requirements.txt` installs the CPU baseline only.
+- `constraints.txt` records the verified Windows/Conda/Python 3.11 dependency graph.
 - `requirements-asr.txt` remains optional and contains Faster-Whisper / ctranslate2.
 - `config.toml.example` defaults to PaddleOCR CPU and ASR disabled.
 - The app can boot without a local `config.toml`.
 - `scripts/download_tools.ps1` can prepare `app/ffmpeg.exe` and `app/yt-dlp.exe`.
 - `scripts/doctor.py` reports `Required baseline: OK` after setup and tool download.
-- `start.bat` starts the server without hardcoded machine-local Python paths.
+- `start.bat` starts the server without hardcoded machine-local Python paths and runs a preflight check before startup.
 - `scripts/smoke_server.py` passes against a running server.
 
 ## Optional ASR
@@ -30,6 +31,7 @@ This checklist defines the minimum bar before publishing SubtitleExtractor as a 
 - Do not vendor `jieba` under `app/`; rely on the PyPI dependency from `requirements.txt`.
 - Git LFS is not required for the default repository checkout.
 - `CHANGELOG.md` describes the pending public release changes.
+- `docs/troubleshooting.md` covers setup, download, PaddleOCR, ASR, CUDA, and port conflicts.
 - `docs/release_audit.md` records the latest evidence for release readiness.
 
 ## Verification Commands

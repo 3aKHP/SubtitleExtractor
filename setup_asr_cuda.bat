@@ -7,6 +7,8 @@ setlocal
 
 set "ENV_NAME=subtitle-extractor"
 if defined SUBTITLE_EXTRACTOR_ENV set "ENV_NAME=%SUBTITLE_EXTRACTOR_ENV%"
+set "PIP_CONSTRAINT_ARGS="
+if exist "constraints.txt" set "PIP_CONSTRAINT_ARGS=-c constraints.txt"
 
 call :find_conda
 if errorlevel 1 (
@@ -16,6 +18,7 @@ if errorlevel 1 (
 
 echo Using Conda: %CONDA%
 echo Environment: %ENV_NAME%
+if defined PIP_CONSTRAINT_ARGS echo Pip constraints: constraints.txt
 echo.
 
 echo [1/3] Checking conda environment...
@@ -27,7 +30,7 @@ if errorlevel 1 (
 )
 
 echo [2/3] Installing optional ASR dependencies...
-call :run_python -m pip install -r requirements-asr.txt
+call :run_python -m pip install -r requirements-asr.txt %PIP_CONSTRAINT_ARGS%
 if errorlevel 1 (
     echo ASR dependency installation failed.
     pause

@@ -20,11 +20,13 @@ Make SubtitleExtractor distributable as an out-of-the-box GitHub project by stab
 | PaddleOCR CPU default | `config.toml.example` uses `backend = "paddle"` and `use_gpu = false`; `/health` reports `ocr_backend=paddle`, `ocr_use_gpu=false`. | Verified |
 | RapidOCR excluded from distribution path | `config.toml.example` documents only `paddle` / `remote`; `create_ocr_engine()` raises for `rapidocr`, `local`, and unknown backends; tests cover these cases. | Verified |
 | ASR optional by default | `config.toml.example` uses `[asr] enabled = false`; `requirements.txt` excludes Faster-Whisper / ctranslate2; `requirements-asr.txt` contains the ASR layer. | Verified |
+| Reproducible baseline dependencies | `constraints.txt` records the dependency graph from the fresh Windows/Conda/Python 3.11 install smoke, and setup scripts install with those constraints when present. | Verified |
 | ASR native dependency isolation | `core.asr_worker` handles ASR import/model/transcription in a child Python process; server startup and pipeline call the worker instead of importing `core.asr_engine` in-process. | Verified |
-| Clone-friendly Windows startup | `setup_env.bat`, `setup_asr_cuda.bat`, and `start.bat` auto-detect Conda and support environment-variable overrides. | Verified |
+| Clone-friendly Windows startup | `setup_env.bat`, `setup_asr_cuda.bat`, and `start.bat` auto-detect Conda and support environment-variable overrides; `start.bat` runs a preflight doctor check before startup. | Verified |
 | Local-only artifacts excluded | `.gitignore` excludes `config.toml`, `.env`, downloaded tools, local models, benchmark output, and diagnostics. | Verified |
 | No vendored `jieba` / no Git LFS checkout requirement | `app/jieba` and `.gitattributes` are removed; `requirements.txt` includes `jieba`; tests pass using the PyPI package. | Verified |
 | Diagnostics | `scripts/doctor.py` checks baseline imports/tools and optional ASR imports in subprocesses. | Verified |
+| Troubleshooting docs | `docs/troubleshooting.md` covers setup, external tools, PaddleOCR model download, Bilibili download issues, ASR, CUDA, and port conflicts. | Verified |
 | Server smoke | `scripts/smoke_server.py` checks `/health` and can optionally submit/poll `/extract`. | Verified |
 | Performance baseline | `docs/performance.md` records the Bilibili sample, CPU OCR timing, CPU ASR timing, CUDA ASR timing, and reproduction commands. | Verified |
 | CI guardrails | GitHub Actions run lint, compileall, entrypoint help checks, and tests without pulling heavy OCR/ASR model stacks. | Verified |

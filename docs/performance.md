@@ -43,7 +43,7 @@ Estimated full processing time for this video:
 
 The practical bottleneck is ASR, not OCR. PaddleOCR CPU is fast enough on this sample, while PaddleOCR GPU adds native dependency risk without clear distribution value. Faster-Whisper CUDA provides the largest speedup and should be treated as the advanced acceleration path.
 
-For distribution, install `requirements.txt` first and treat `requirements-asr.txt` as an optional layer. On Windows, `setup_env.bat` prepares the CPU baseline, and `setup_asr_cuda.bat` adds the ASR layer afterward. Both scripts auto-detect Conda and accept `SUBTITLE_EXTRACTOR_ENV` / `CONDA_EXE` overrides. This keeps the default clone-and-run path free of Faster-Whisper, ctranslate2, and CUDA runtime surprises.
+For distribution, install `requirements.txt` first with `constraints.txt` and treat `requirements-asr.txt` as an optional layer. On Windows, `setup_env.bat` prepares the CPU baseline using the checked-in constraints, and `setup_asr_cuda.bat` adds the ASR layer afterward. Both scripts auto-detect Conda and accept `SUBTITLE_EXTRACTOR_ENV` / `CONDA_EXE` overrides. This keeps the default clone-and-run path free of Faster-Whisper, ctranslate2, and CUDA runtime surprises.
 
 The application can boot from `config.toml.example` when `config.toml` is absent. Copy `config.toml.example` to `config.toml` only when local overrides are needed.
 
