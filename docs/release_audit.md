@@ -74,7 +74,42 @@ Observed results:
 - Compileall: passed.
 - Help entrypoints: passed.
 
+## Fresh Install Smoke
+
+To verify the from-zero setup path, a new local clone and a new Conda prefix environment were created on 2026-05-29:
+
+- Clone: `local_dev/fresh_clone_requirements_smoke_20260529_104055`
+- Conda prefix: `local_dev/conda_fresh_smoke_20260529_104055`
+- Python: 3.11.15
+
+Executed in the fresh clone:
+
+```powershell
+python -m pip install -r requirements.txt
+python app/main.py --help
+python scripts/benchmark_runtime.py --help
+python scripts/smoke_server.py --help
+$env:PADDLE_OCR_BASE_DIR = "<fresh clone>/paddleocr_cache_empty"
+python -c "import sys, json; sys.path.insert(0, 'app'); import server; print(json.dumps(server.health(), ensure_ascii=False, sort_keys=True))"
+python scripts/doctor.py
+powershell -ExecutionPolicy Bypass -File scripts/download_tools.ps1
+python scripts/doctor.py
+```
+
+Observed results:
+
+- `pip install -r requirements.txt`: passed with `paddleocr==2.10.0` and `paddlepaddle==2.6.2`.
+- Help entrypoints: passed.
+- First server import initialized PaddleOCR CPU and downloaded PaddleOCR models into the forced fresh `PADDLE_OCR_BASE_DIR`.
+- `/health` equivalent import check returned `status=ok`, `ocr_backend=paddle`, `ocr_use_gpu=false`, `asr_enabled=false`, `asr_available=false`.
+- HTTP smoke against a real uvicorn process on `127.0.0.1:8765`: passed.
+- `doctor.py` before tool download reported Python imports OK and `yt-dlp` missing, as expected.
+- `scripts/download_tools.ps1`: downloaded clone-local `app/yt-dlp.exe` and `app/ffmpeg.exe`.
+- `doctor.py` after tool download: `Required baseline: OK`.
+- Direct PaddleOCR CPU inference on an in-memory test image returned `HELLO 123`.
+- End-to-end `/extract` smoke against the Bilibili sample `BV1F3GH6bEGw`: passed with ASR disabled.
+- The fresh clone produced `output/subtitle_BV1F3GH6bEGw.txt` and returned task status `done`, progress `100`, title `在AI时代，许多数学博士生都感到无比的迷茫`.
+
 ## Remaining Release Actions
 
-- Optionally run `setup_env.bat` on a clean Windows machine or VM for a full fresh-clone install proof.
 - Tag or publish only after reviewing generated release notes from `CHANGELOG.md`.
