@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0 - 2026-05-29
+
 - Set PaddleOCR CPU as the default supported OCR path.
 - Split Faster-Whisper / ctranslate2 into optional ASR dependencies.
 - Run ASR health checks and transcription through an isolated worker process.

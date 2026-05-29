@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bilibili 硬字幕提取器",
-  "version": "1.0",
+  "version": "0.1.0",
   "description": "一键提取 Bilibili 视频硬字幕",
   "permissions": [
     "activeTab", 

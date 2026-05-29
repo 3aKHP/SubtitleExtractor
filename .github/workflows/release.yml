@@ -69,8 +69,17 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $changelog = Get-Content CHANGELOG.md -Raw
-          $match = [regex]::Match($changelog, '(?ms)^## Unreleased\s*(.*?)(?=^## |\z)')
-          $section = if ($match.Success) { $match.Groups[1].Value.Trim() } else { "" }
+          $version = $tag -replace '^v', ''
+          $versionPattern = [regex]::Escape($version)
+          $versionMatch = [regex]::Match($changelog, "(?ms)^##\s+$versionPattern(?:\s+-[^\r\n]*)?\s*(.*?)(?=^## |\z)")
+          $unreleasedMatch = [regex]::Match($changelog, '(?ms)^## Unreleased\s*(.*?)(?=^## |\z)')
+          if ($versionMatch.Success) {
+            $section = $versionMatch.Groups[1].Value.Trim()
+          } elseif ($unreleasedMatch.Success) {
+            $section = $unreleasedMatch.Groups[1].Value.Trim()
+          } else {
+            $section = ""
+          }
 
           $notes = "# SubtitleExtractor $tag`n`n"
           if ($section) {
